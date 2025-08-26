@@ -1,0 +1,35 @@
+<h2>Release Information</h2>
+<table>
+    <tr>
+        <th>Release Version</th>
+        <td>{{ release_info.release_version }}</td>
+    </tr>
+    {% if release_info.branch_cut_date %}
+    <tr>
+        <th>Branch Cut Date</th>
+        <td>{{ release_info.branch_cut_date }}</td>
+    </tr>
+    {% endif %}
+    {% if release_info.days_since_branch_cut is not none %}
+        {% set display_value = release_info.days_since_branch_cut %}
+        {% if release_info.days_since_branch_cut is number and release_info.days_since_branch_cut < 0 %}
+            {% set display_value = "Future date, yet to happen" %}
+        {% endif %}
+    <tr>
+        <th>Days Since Branch Cut</th>
+        <td>{{ display_value }}</td>
+    </tr>
+    {% endif %}
+</table>
+
+<h3>Points of Contact</h3>
+<table>
+    <tr>
+        <th>Engineering Manager (EM)</th>
+        <th>Scrum Master (SM)</th>
+    </tr>
+    <tr>
+        <td><a href="mailto:{{ release_info.em_email }}">{{ release_info.em }}</a></td>
+        <td><a href="mailto:{{ release_info.sm_email }}">{{ release_info.sm }}</a></td>
+    </tr>
+</table>

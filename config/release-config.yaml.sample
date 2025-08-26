@@ -1,0 +1,21 @@
+releases:
+  - release_version: "APP 25.08-R2"
+    branch_cut_date: "2025-08-12"
+    team_name: "APP TRANSACT"
+
+teams:
+  - name: "APP PDP"
+    em: "Nirmal Thakur"
+    em_email: "nirmal.thakur@macys.com"
+    sm: "Ananthalal Thankabai"
+    sm_email: "ananthalal.thankabai@macys.com"
+  - name: "APP SHOP"
+    em: "Srini Arul David"
+    em_email: "srini.arul.david@macys.com"
+    sm: "Wagner Prochno"
+    sm_email: "wagner.prochno@macys.com"
+  - name: "APP TRANSACT"
+    em: "Wil Klentzeris"
+    em_email: "wil.klentzeris@macys.com"
+    sm: "Oleksandr Kovalenko"
+    sm_email: "oleksandr.kovalenko@macys.com"

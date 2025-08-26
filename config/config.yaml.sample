@@ -1,0 +1,24 @@
+# This file contains application-wide configuration settings.
+# These settings are generally stable and apply across different report types.
+
+# Jira Connection Details
+jira:
+  server: https://your-jira-instance.com
+  jira_email: your.email@example.com
+
+# Run Settings
+run_settings:
+  send_email_report: true
+  email_recipient_email:
+    - "recipient1@example.com"
+    - "recipient2@example.com"
+  include_assignees_in_email_report: false
+  include_reportees_in_email_report: false
+
+# Email Sender Settings
+email_settings:
+  sender_email: "your.email@example.com"
+  sender_password: "your_app_password"
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+

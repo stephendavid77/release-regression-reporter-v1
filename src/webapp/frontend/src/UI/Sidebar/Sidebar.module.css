@@ -1,0 +1,85 @@
+.sidebar {
+  width: 25vw;
+  background-color: var(--background-color); /* Use global background color */
+  border-right: 1px solid var(--border-color); /* Use global border color */
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  padding: var(--spacing-md); /* Add some padding to the sidebar itself */
+}
+
+.sidebarHeader {
+  padding-bottom: var(--spacing-md); /* Adjust padding */
+  border-bottom: 1px solid var(--border-color); /* Use global border color */
+  margin-bottom: var(--spacing-md); /* Add margin below header */
+}
+
+.sidebarHeader h2 {
+  margin-top: 15px;
+  margin-bottom: 10px;
+  font-size: 24px; /* Matching h1 in index.css */
+  color: var(--primary-color); /* Use primary color for heading */
+}
+
+.sidebarContent {
+  flex-grow: 1; /* Allow content to grow */
+  overflow-y: auto;
+  padding-right: var(--spacing-sm); /* Add padding for scrollbar */
+}
+
+.formLabel {
+  font-weight: 600; /* Bolder labels */
+  color: var(--text-color); /* Use global text color */
+  margin-bottom: var(--spacing-xs); /* Smaller margin below label */
+}
+
+.formText {
+  font-size: 0.85em; /* Slightly smaller font size */
+  color: var(--secondary-color); /* Use secondary color for helper text */
+  margin-top: var(--spacing-xs); /* Smaller margin above helper text */
+}
+
+/* Enhance form control styling */
+.sidebar :global(.form-select),
+.sidebar :global(.form-control) {
+  border-color: var(--border-color);
+  box-shadow: none;
+}
+
+.sidebar :global(.form-select:focus),
+.sidebar :global(.form-control:focus) {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.25rem rgba(26, 115, 232, 0.25); /* Primary color shadow on focus */
+}
+
+/* Enhance button styling */
+.sidebar :global(.btn-primary) {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  font-weight: 600;
+}
+
+.sidebar :global(.btn-primary:hover) {
+  background-color: #1565c0; /* Slightly darker primary on hover */
+  border-color: #1565c0;
+}
+
+.sidebar :global(.btn-outline-primary) {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.sidebar :global(.btn-outline-primary:hover) {
+  background-color: var(--primary-color);
+  color: #fff;
+}
+
+.sidebar :global(.btn-outline-danger) {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.sidebar :global(.btn-outline-danger:hover) {
+  background-color: #dc3545;
+  color: #fff;
+}

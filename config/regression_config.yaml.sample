@@ -1,0 +1,46 @@
+# This file contains configuration settings specific to regression and post-release metrics reports.
+# These settings define the JQLs, SLA thresholds, and holiday schedules for report generation.
+
+report_type: "all_issues" #Can be all_issues or open_issues
+
+email_recipients:
+  app_leadership:
+    - "app.leadership@example.com"
+    - "another.app.lead@example.com"
+  regression_team:
+    - "regression.team@example.com"
+    - "another.regression.team@example.com"
+  tech_leads:
+    - "tech.leads@example.com"
+    - "another.tech.lead@example.com"
+  scrum_masters:
+    - "scrum.master1@example.com"
+    - "scrum.master2@example.com"
+reports:
+  - name: "Report Name 1"
+    jql_template: 'your_jql_here'
+  - name: "Report Name 2"
+    jql_template: 'your_jql_here'
+
+post_release_metrics:
+  - name: "Post-Release Report 1"
+    jql_template: 'your_jql_here'
+  - name: "Post-Release Report 2"
+    jql_template: 'your_jql_here'
+  - name: "Post-Release Report 3"
+    jql_template: 'your_jql_here'
+
+sla:
+  Critical: 24
+  High: 36
+  Medium: 48
+  Low: 48
+
+us_holidays:
+  - "2025-01-01"
+  - "2025-01-20"
+  - "2025-05-26"
+  - "2025-07-04"
+  - "2025-09-01"
+  - "2025-11-27"
+  - "2025-12-25"

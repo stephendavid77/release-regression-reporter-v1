@@ -1,0 +1,13 @@
+jira
+pyyaml
+click
+keyring
+md-to-pdf
+pandas
+openpyxl
+fastapi
+uvicorn
+pytz
+Jinja2
+premailer
+python-dotenv

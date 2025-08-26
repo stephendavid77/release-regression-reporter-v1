@@ -1,0 +1,18 @@
+# Ignore environment file
+.env
+
+# Ignore IDE files
+.idea/
+
+# Ignore generated reports and local config files
+config/regression_config.yaml
+config/config.yaml
+config/release-config.yaml
+sla_report.html
+src/jira-connection-test.py
+src/sla_report.html
+src/test_jira_in_docker.py
+test_jira_in_docker.py
+setup_jira_docker.py
+reports/
+sla_report.xlsx

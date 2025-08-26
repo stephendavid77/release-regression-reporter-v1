@@ -1,0 +1,136 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Styles from style.css */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+.container {
+    max-width: 960px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+.download-icon-global {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px; /* Slightly larger icon */
+    height: 30px;
+    color: #0056b3; /* Icon color */
+    text-decoration: none;
+    transition: color 0.2s ease-in-out;
+}
+
+.download-icon-global:hover {
+    color: #007bff;
+}
+
+.download-icon-global svg {
+    width: 100%;
+    height: 100%;
+}
+h1, h2, h3, h4, h5, h6 {
+    color: #0056b3;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    line-height: 1.2;
+}
+.container h1 { font-size: 20px; margin-top: 15px; margin-bottom: 10px; }
+.container h2 { font-size: 18px; margin-top: 12px; margin-bottom: 8px; }
+.container h3 { font-size: 16px; margin-top: 10px; margin-bottom: 6px; }
+p {
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+th, td {
+    border: 1px solid #ddd;
+    text-align: left;
+    padding: 12px 15px;
+    font-size: 13px;
+}
+th {
+    background-color: #e9ecef;
+    font-weight: bold;
+    color: #555;
+}
+tr:nth-child(even) {
+    background-color: #f8f8f8;
+}
+tr:hover {
+    background-color: #f1f1f1;
+}
+tr.sla-breached { background-color: #FFF0F0; color: #d9534f; }
+tr.sla-ok { background-color: #F0FFF0; color: #5cb85c; }
+tr.sla-warning { background-color: #FFFFF0; color: #f0ad4e; }
+a { color: #007bff; text-decoration: none; }
+table a { color: inherit; }
+a:hover { text-decoration: underline; }
+.legend { margin-top: 30px; padding-top: 15px; border-top: 1px solid #eee; }
+.legend p { margin-bottom: 5px; }
+.legend span { display: inline-block; width: 20px; height: 20px; vertical-align: middle; margin-right: 8px; border-radius: 3px; }
+
+.time-in-each-status {
+    min-width: 150px;
+    white-space: pre-wrap;
+}
+
+.black-font {
+    color: black !important;
+}
+
+.report-header {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between h2 and icon */
+}
+
+.download-icon {
+    display: inline-flex; /* To align SVG nicely */
+    align-items: center;
+    justify-content: center;
+    width: 24px; /* Size of the icon */
+    height: 24px;
+    color: #0056b3; /* Icon color, matching h1/h2 */
+    text-decoration: none; /* Remove underline from link */
+    transition: color 0.2s ease-in-out;
+}
+
+.download-icon:hover {
+    color: #007bff; /* Darker color on hover */
+}
+
+.download-icon svg {
+    width: 100%;
+    height: 100%;
+}

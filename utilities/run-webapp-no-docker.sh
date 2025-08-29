@@ -3,15 +3,20 @@
 # Ensure the script runs from the project root
 cd "$(dirname "$0")/.."
 
-echo "Attempting to kill any process on port 8000..."
-# Find PID using lsof and kill it
-PIDS=$(lsof -t -i:8000)
-if [ -n "$PIDS" ]; then
-  echo "$PIDS" | xargs kill -9
-  echo "Killed process(es) on port 8000."
+if command -v lsof &> /dev/null; then
+    echo "Attempting to kill any process on port 8000..."
+    # Find PID using lsof and kill it
+    PIDS=$(lsof -t -i:8000)
+    if [ -n "$PIDS" ]; then
+      echo "$PIDS" | xargs kill -9
+      echo "Killed process(es) on port 8000."
+    else
+      echo "No process found on port 8000."
+    fi
 else
-  echo "No process found on port 8000."
+    echo "lsof not found, skipping process killing."
 fi
+
 
 echo "Checking for Node.js and npm..."
 if ! command -v node &> /dev/null
@@ -41,6 +46,8 @@ echo "Installing frontend dependencies..."
 echo "Building frontend..."
 (cd src/webapp/frontend && npm run build)
 
-uvicorn src.webapp.main:app --host 0.0.0.0 --port 8000 --reload &
+echo "Frontend build complete. Starting Uvicorn."
+
+uvicorn src.webapp.main:app --host 0.0.0.0 --port 8000 --reload
 
 echo "Webapp started."

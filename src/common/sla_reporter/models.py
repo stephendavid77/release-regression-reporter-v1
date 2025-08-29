@@ -41,6 +41,7 @@ class IssueDetails:
     time_in_each_status: Dict[str, float]
     created: datetime
     resolution_date: Optional[datetime] = None
+    team: Optional[str] = None
 
 
 @dataclass

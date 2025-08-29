@@ -16,3 +16,5 @@ test_jira_in_docker.py
 setup_jira_docker.py
 reports/
 sla_report.xlsx
+*.pyc
+__pycache__/

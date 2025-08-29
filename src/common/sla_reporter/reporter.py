@@ -33,7 +33,7 @@ class Reporter:
         logger.info("Starting SLA report generation for CLI.")
         report_type = self.config.get("report_type", "regression")
         release_version = self.config.get("fix_version")
-        html_report, reports_data, days_since_branch_cut = self._generate_report_data(release_version, report_type)
+        html_report, reports_data, days_since_branch_cut = self._generate_report_data(release_version, report_type, "All", [], [])
 
         with open(self.output_path, "w") as f:
             f.write(html_report)
@@ -58,9 +58,9 @@ class Reporter:
 
         logger.info("SLA report generation complete.")
 
-    def run_webapp(self, release_version: str, report_type: str, email_recipients: List[str], include_assignees_in_email_report: bool = False, include_reportees_in_email_report: bool = False, include_app_leadership: bool = False, include_regression_team: bool = False, include_tech_leads: bool = False, include_scrum_masters: bool = False, send_email_report: bool = False):
+    def run_webapp(self, release_version: str, report_type: str, selected_team: str, selected_statuses: List[str], selected_platforms: List[str], email_recipients: List[str], include_assignees_in_email_report: bool = False, include_reportees_in_email_report: bool = False, include_app_leadership: bool = False, include_regression_team: bool = False, include_tech_leads: bool = False, include_scrum_masters: bool = False, send_email_report: bool = False):
         logger.info(f"Starting SLA report generation for webapp for release {release_version}.")
-        html_report, reports_data, days_since_branch_cut = self._generate_report_data(release_version, report_type)
+        html_report, reports_data, days_since_branch_cut = self._generate_report_data(release_version, report_type, selected_team, selected_statuses, selected_platforms)
 
         if report_type == "open_issues" or report_type == "all_issues":
             excel_filename = "sla_report.xlsx"
@@ -85,6 +85,7 @@ class Reporter:
                     include_app_leadership=include_app_leadership,
                     include_regression_team=include_regression_team,
                     include_tech_leads=include_tech_leads,
+                    include_scrum_masters=include_scrum_masters,
                 )
             else:
                 self._send_email_report(
@@ -99,46 +100,7 @@ class Reporter:
                     include_app_leadership=include_app_leadership,
                     include_regression_team=include_regression_team,
                     include_tech_leads=include_tech_leads,
-                )
-
-        return html_report
-
-        if report_type == "open_issues" or report_type == "all_issues":
-            excel_path = "sla_report.xlsx"
-            generate_excel_report(reports_data, excel_path)
-            attachment_path = excel_path
-        else:
-            attachment_path = None
-
-        if send_email_report and email_recipients:
-            if attachment_path:
-                self._send_email_report(
-                    html_report,
-                    report_type,
-                    days_since_branch_cut,
-                    release_version,
-                    email_recipients,
-                    reports_data,
-                    attachment_path=attachment_path,
-                    include_assignees_in_email_report=include_assignees_in_email_report,
-                    include_reportees_in_email_report=include_reportees_in_email_report,
-                    include_app_leadership=include_app_leadership,
-                    include_regression_team=include_regression_team,
-                    include_tech_leads=include_tech_leads,
-                )
-            else:
-                self._send_email_report(
-                    html_report,
-                    report_type,
-                    days_since_branch_cut,
-                    release_version,
-                    email_recipients,
-                    reports_data,
-                    include_assignees_in_email_report=include_assignees_in_email_report,
-                    include_reportees_in_email_report=include_reportees_in_email_report,
-                    include_app_leadership=include_app_leadership,
-                    include_regression_team=include_regression_team,
-                    include_tech_leads=include_tech_leads,
+                    include_scrum_masters=include_scrum_masters,
                 )
 
         return html_report
@@ -155,7 +117,7 @@ class Reporter:
             current_date += timedelta(days=1)
         return business_days
 
-    def _generate_report_data(self, release_version: str, report_type: str):
+    def _generate_report_data(self, release_version: str, report_type: str, selected_team: str = "All", selected_statuses: List[str] = [], selected_platforms: List[str] = []):
         self.release_info = get_release_info(self.releases, self.teams, release_version)
 
         if not self.release_info:
@@ -183,10 +145,18 @@ class Reporter:
         self.jira_client = SlaJiraClient(credentials=self.credentials, holidays=set(holidays))
         jira_server_url = self.jira_client.jira_config["server"]
 
+        reports = self.config.get("reports", [])
+        if selected_platforms and "All" not in selected_platforms:
+            reports = [report for report in reports if report["name"] in selected_platforms]
+
         if report_type == "all_issues":
-            reports_data = self._process_all_issues_reports(release_version)
+            reports_data = self._process_all_issues_reports(reports, release_version, selected_statuses)
         elif report_type == "open_issues":
-            reports_data = self._process_open_issues_reports(release_version)
+            reports_data = self._process_open_issues_reports(reports, release_version, selected_statuses)
+
+        if selected_team != "All":
+            for report_data in reports_data:
+                report_data.issues = [issue for issue in report_data.issues if issue.team == selected_team]
         
         logger.debug(f"Reports data fetched: {reports_data}")
         
@@ -233,14 +203,41 @@ class Reporter:
         logger.debug(f"Generated HTML report (first 500 chars): {html_report[:500]}")
         return html_report
 
-    def _fetch_report_data(self, report_config, release_version) -> ReportData:
+    def _fetch_report_data(self, report_config, release_version, selected_statuses: List[str] = []) -> ReportData:
         logger.info(f"Fetching issues for report: {report_config['name']}")
         jql = report_config["jql_template"].format(fix_version=release_version)
+        if selected_statuses:
+            status_jql = ", ".join([f'"{s}"' for s in selected_statuses])
+            new_status_clause = f"status in ({status_jql})"
+
+            # Replace existing status clause or add a new one before ORDER BY
+            if re.search(r'status (not in|in) ', jql, re.IGNORECASE):
+                jql = re.sub(r'status (not in|in) \([^)]*\)', new_status_clause, jql, flags=re.IGNORECASE)
+            else:
+                order_by_match = re.search(r' ORDER BY ', jql, re.IGNORECASE)
+                if order_by_match:
+                    order_by_index = order_by_match.start()
+                    jql = f"{jql[:order_by_index]} AND {new_status_clause} {jql[order_by_index:]}"
+                else:
+                    jql = f"{jql} AND {new_status_clause}"
         logger.debug(f"JQL: {jql}")
         issues = self.jira_client.search_issues(jql)
+        epic_to_team_mapping = self.config.get("epic_to_team_mapping", {})
 
         issue_details = []
         for issue in issues:
+            team = "Uncategorized"
+            epic_key = getattr(issue.fields, 'customfield_10014', None)
+            if not epic_key and hasattr(issue.fields, 'parent'):
+                try:
+                    parent_issue = self.jira_client.issue(issue.fields.parent.key)
+                    epic_key = getattr(parent_issue.fields, 'customfield_10014', None)
+                except Exception as e:
+                    logger.warning(f"Could not fetch parent issue for {issue.key}: {e}")
+
+            if epic_key and epic_key in epic_to_team_mapping:
+                team = epic_to_team_mapping[epic_key]
+
             issue_details.append(
                 IssueDetails(
                     key=issue.key,
@@ -256,6 +253,7 @@ class Reporter:
                     time_in_each_status=self.jira_client.get_time_in_each_status(issue),
                     created=datetime.strptime(issue.fields.created, "%Y-%m-%dT%H:%M:%S.%f%z"),
                     resolution_date=datetime.strptime(issue.fields.resolutiondate, "%Y-%m-%dT%H:%M:%S.%f%z") if issue.fields.resolutiondate else None,
+                    team=team,
                 )
             )
 
@@ -265,7 +263,7 @@ class Reporter:
             issues=issue_details,
         )
 
-    def _fetch_post_release_metrics_data(self, report_config, release_version) -> ReportData:
+    def _fetch_post_release_metrics_data(self, report_config, release_version, selected_statuses: List[str] = []) -> ReportData:
         logger.info(
             f"Fetching issues for post-release metrics report: {report_config['name']}"
         )
@@ -273,11 +271,38 @@ class Reporter:
         jql = report_config["jql_template"].format(
             fix_version=release_version, release_date=release_date
         )
+        if selected_statuses:
+            status_jql = ", ".join([f'"{s}"' for s in selected_statuses])
+            new_status_clause = f"status in ({status_jql})"
+
+            # Replace existing status clause or add a new one before ORDER BY
+            if re.search(r'status (not in|in) ', jql, re.IGNORECASE):
+                jql = re.sub(r'status (not in|in) \([^)]*\)', new_status_clause, jql, flags=re.IGNORECASE)
+            else:
+                order_by_match = re.search(r' ORDER BY ', jql, re.IGNORECASE)
+                if order_by_match:
+                    order_by_index = order_by_match.start()
+                    jql = f"{jql[:order_by_index]} AND {new_status_clause} {jql[order_by_index:]}"
+                else:
+                    jql = f"{jql} AND {new_status_clause}"
         logger.debug(f"JQL: {jql}")
         issues = self.jira_client.search_issues(jql)
+        epic_to_team_mapping = self.config.get("epic_to_team_mapping", {})
 
         issue_details = []
         for issue in issues:
+            team = "Uncategorized"
+            epic_key = getattr(issue.fields, 'customfield_10014', None)
+            if not epic_key and hasattr(issue.fields, 'parent'):
+                try:
+                    parent_issue = self.jira_client.issue(issue.fields.parent.key)
+                    epic_key = getattr(parent_issue.fields, 'customfield_10014', None)
+                except Exception as e:
+                    logger.warning(f"Could not fetch parent issue for {issue.key}: {e}")
+
+            if epic_key and epic_key in epic_to_team_mapping:
+                team = epic_to_team_mapping[epic_key]
+
             issue_details.append(
                 IssueDetails(
                     key=issue.key,
@@ -293,6 +318,7 @@ class Reporter:
                     time_in_each_status=self.jira_client.get_time_in_each_status(issue),
                     created=datetime.strptime(issue.fields.created, "%Y-%m-%dT%H:%M:%S.%f%z"),
                     resolution_date=datetime.strptime(issue.fields.resolutiondate, "%Y-%m-%dT%H:%M:%S.%f%z") if issue.fields.resolutiondate else None,
+                    team=team,
                 )
             )
 
@@ -302,7 +328,7 @@ class Reporter:
             issues=issue_details,
         )
 
-    def _process_all_issues_reports(self, release_version):
+    def _process_all_issues_reports(self, reports, release_version, selected_statuses: List[str] = []):
         reports_data = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future_to_report = {
@@ -310,8 +336,9 @@ class Reporter:
                     self._fetch_post_release_metrics_data, # Changed from _fetch_report_data
                     report_config,
                     release_version,
+                    selected_statuses,
                 ): report_config
-                for report_config in self.config.get("post_release_metrics", []) # Changed from "reports"
+                for report_config in reports
             }
             for future in concurrent.futures.as_completed(future_to_report):
                 report_config = future_to_report[future]
@@ -322,7 +349,7 @@ class Reporter:
                     logger.error(f"{report_config['name']} generated an exception: {exc}")
         return reports_data
 
-    def _process_open_issues_reports(self, release_version):
+    def _process_open_issues_reports(self, reports, release_version, selected_statuses: List[str] = []):
         reports_data = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future_to_report = {
@@ -330,8 +357,9 @@ class Reporter:
                     self._fetch_post_release_metrics_data,
                     report_config,
                     release_version,
+                    selected_statuses,
                 ): report_config
-                for report_config in self.config.get("post_release_metrics", [])
+                for report_config in reports
             }
             for future in concurrent.futures.as_completed(future_to_report):
                 report_config = future_to_report[future]

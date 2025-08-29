@@ -10,6 +10,11 @@ import styles from './App.module.css';
 function App() {
   const [reportType, setReportType] = useState('All Issues');
   const [releaseVersion, setReleaseVersion] = useState('APP 25.08-R2');
+  const [selectedTeam, setSelectedTeam] = useState('All');
+  const [teams, setTeams] = useState([]);
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const [platforms, setPlatforms] = useState([]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState([]);
   const [emailRecipients, setEmailRecipients] = useState(['']);
   const [includeAssigneesInEmail, setIncludeAssigneesInEmail] = useState(false);
   const [includeReporteesInEmail, setIncludeReporteesInEmail] = useState(false);
@@ -46,6 +51,21 @@ function App() {
         }
       })
       .catch(error => console.error('Error fetching report types:', error));
+
+    // Fetch teams
+    axios.get('/api/teams')
+      .then(response => {
+        setTeams(['All', ...response.data.teams]);
+      })
+      .catch(error => console.error('Error fetching teams:', error));
+
+    // Fetch reports to extract platforms
+    axios.get('/api/reports')
+      .then(response => {
+        const platformNames = response.data.reports;
+        setPlatforms(['All', ...platformNames]);
+      })
+      .catch(error => console.error('Error fetching reports:', error));
   }, []);
 
   const generateReport = async () => {
@@ -57,6 +77,9 @@ function App() {
       const response = await axios.post('/api/generate-report', {
         report_type: reportType,
         release_version: releaseVersion,
+        selected_team: selectedTeam,
+        selected_statuses: selectedStatuses,
+        selected_platforms: selectedPlatforms,
         send_email_report: sendEmailReport,
         email_recipients: emailRecipients.filter(email => email !== ''),
         include_assignees_in_email_report: includeAssigneesInEmail,
@@ -93,6 +116,14 @@ function App() {
         setReportType={setReportType}
         releaseVersion={releaseVersion}
         setReleaseVersion={setReleaseVersion}
+        selectedTeam={selectedTeam}
+        setSelectedTeam={setSelectedTeam}
+        teams={teams}
+        selectedStatuses={selectedStatuses}
+        setSelectedStatuses={setSelectedStatuses}
+        platforms={platforms}
+        selectedPlatforms={selectedPlatforms}
+        setSelectedPlatforms={setSelectedPlatforms}
         emailRecipients={emailRecipients}
         setEmailRecipients={setEmailRecipients}
         includeAssigneesInEmail={includeAssigneesInEmail}

@@ -1,46 +1,59 @@
-# This file contains configuration settings specific to regression and post-release metrics reports.
-# These settings define the JQLs, SLA thresholds, and holiday schedules for report generation.
+# This is a sample configuration file for the regression reporter.
+# Copy this file to "regression_config.yaml" and edit it with your settings.
 
-report_type: "all_issues" #Can be all_issues or open_issues
+# Report type can be "regression" or "post_release_metrics"
+report_type: "regression"
 
+# Fix version for the release
+fix_version: "APP 25.08-R2"
+
+# SLA configuration in business days
+sla:
+  P0: 1
+  P1: 2
+  P2: 5
+  P3: 10
+  P4: 20
+
+# List of US holidays in YYYY-MM-DD format
+us_holidays:
+  - "2024-01-01"
+  - "2024-01-15"
+  - "2024-02-19"
+  - "2024-05-27"
+  - "2024-06-19"
+  - "2024-07-04"
+  - "2024-09-02"
+  - "2024-11-28"
+  - "2024-12-25"
+
+# Configuration for regression SLA reports
+reports:
+  - name: "Open Regressions"
+    jql_template: "project = APP AND fixVersion = '{fix_version}' AND type = Bug AND 'Bug Type' = Regression AND status not in (Closed, Cancelled)"
+  - name: "Closed Regressions"
+    jql_template: "project = APP AND fixVersion = '{fix_version}' AND type = Bug AND 'Bug Type' = Regression AND status in (Closed, Cancelled)"
+
+# Configuration for post-release metrics reports
+post_release_metrics:
+  - name: "Post-Release Issues"
+    jql_template: "project = APP AND fixVersion = '{fix_version}' AND created >= '{release_date}'"
+
+# Email recipients for the report
 email_recipients:
   app_leadership:
-    - "app.leadership@example.com"
-    - "another.app.lead@example.com"
+    - "leader1@example.com"
+    - "leader2@example.com"
   regression_team:
-    - "regression.team@example.com"
-    - "another.regression.team@example.com"
+    - "regression_tester1@example.com"
   tech_leads:
-    - "tech.leads@example.com"
-    - "another.tech.lead@example.com"
+    - "tech_lead1@example.com"
   scrum_masters:
-    - "scrum.master1@example.com"
-    - "scrum.master2@example.com"
-reports:
-  - name: "Report Name 1"
-    jql_template: 'your_jql_here'
-  - name: "Report Name 2"
-    jql_template: 'your_jql_here'
+    - "scrum_master1@example.com"
 
-post_release_metrics:
-  - name: "Post-Release Report 1"
-    jql_template: 'your_jql_here'
-  - name: "Post-Release Report 2"
-    jql_template: 'your_jql_here'
-  - name: "Post-Release Report 3"
-    jql_template: 'your_jql_here'
-
-sla:
-  Critical: 24
-  High: 36
-  Medium: 48
-  Low: 48
-
-us_holidays:
-  - "2025-01-01"
-  - "2025-01-20"
-  - "2025-05-26"
-  - "2025-07-04"
-  - "2025-09-01"
-  - "2025-11-27"
-  - "2025-12-25"
+# Epic to team mapping
+epic_to_team_mapping:
+  "ACM-289": "ACM"
+  "APT-1978": "APT"
+  "APLT-2660": "APLT"
+  "ALPR-108": "ALPR"

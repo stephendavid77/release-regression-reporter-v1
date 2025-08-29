@@ -83,3 +83,48 @@
   background-color: #dc3545;
   color: #fff;
 }
+
+.statusDropdown {
+  position: relative;
+}
+
+.statusDropdownHeader {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dropdownArrow {
+  transition: transform 0.2s;
+}
+
+.dropdownArrow.open {
+  transform: rotate(180deg);
+}
+
+.statusCheckboxes {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 8px;
+}
+
+.statusCheckboxes h6 {
+  font-size: 0.9em;
+  font-weight: bold;
+  margin-top: 10px;
+  margin-bottom: 5px;
+  color: var(--primary-color);
+}

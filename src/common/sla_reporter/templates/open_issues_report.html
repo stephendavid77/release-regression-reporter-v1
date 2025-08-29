@@ -8,66 +8,69 @@
         {% set jira_link = jira_server_url + "/issues/?jql=" + encoded_jql %}
         <h2>{{ report_data.name }} (<a href='{{ jira_link }}' target='_blank'>View in Jira</a>)</h2>
         
-        {% if not report_data.issues %}
+        {% if not report_data.issues_by_team %}
             <p>No issues to report for this section.</p>
         {% else %}
-            <table>
-                <tr>
-                    <th>Jira ID</th>
-                    <th>Description</th>
-                    <th>Assignee</th>
-                    <th>Reporter</th>
-                    <th>Priority</th>
-                    <th>Current Status</th>
-                    <th>SLA (hours)</th>
-                    <th>Reported Time</th>
-                    <th>Total Time Open (hours)</th>
-                    <th>Total Open Time (Business Hours)</th>
-                    <th>Time in Current Status (hours)</th>
-                    <th>SLA Met/Not Met</th>
-                    <th>Rootcause(RCA)</th>
-                    <th>RCA Category</th>
-                    <th class="time-in-each-status">Time in Each Status</th>
-                </tr>
-                {% for issue in report_data.issues %}
-                    {% set priority = issue.priority %}
-                    {% set sla = sla_config.get(priority, 48) %}
-                    {% set time_in_status = issue.time_in_status %}
-                    {% set is_breached = time_in_status > sla %}
-                    {% set is_approaching_breach = time_in_status >= (sla * 0.75) and time_in_status < sla %}
-
-                    {% if is_breached %}
-                        {% set row_class = "sla-breached" %}
-                    {% elif is_approaching_breach %}
-                        {% set row_class = "sla-warning" %}
-                    {% else %}
-                        {% set row_class = "sla-ok" %}
-                    {% endif %}
-
-                    {% set sla_status = "Not Met" if is_breached else "Met" %}
-
-                    {% set root_cause = issue.root_cause if issue.root_cause is defined else 'N/A' %}
-                    {% set rca_category = issue.rca_category if issue.rca_category is defined else 'N/A' %}
-
-                    <tr class='{{ row_class }} {% if report_data.name in black_font_report_names %}black-font{% endif %}'>
-                        <td><a href='{{ jira_server_url }}/browse/{{ issue.key }}' target='_blank'>{{ issue.key }}</a></td>
-                        <td>{{ issue.summary }}</td>
-                        <td><a href='mailto:{{ issue.assignee_email }}'>{{ issue.assignee }}</a></td>
-                        <td><a href='mailto:{{ issue.reporter_email }}'>{{ issue.reporter }}</a></td>
-                        <td>{{ priority }}</td>
-                        <td>{{ issue.status }}</td>
-                        <td>{{ sla }}</td>
-                        <td>{{ issue.created.astimezone(est_timezone).strftime('%I:%M %p %d-%b-%y') }}</td>
-                        <td>{{ total_time_open_display }}</td>
-                        <td>{{ _format_hours_to_h_m(business_hours_open) }}</td>
-                        <td>{{ _format_hours_to_h_m(time_in_status) }}</td>
-                        <td>{{ sla_status }}</td>
-                        <td>{{ root_cause }}</td>
-                        <td>{{ rca_category }}</td>
-                        <td class="time-in-each-status">{{ _format_time_in_each_status(issue.time_in_each_status) | safe }}</td>
+            {% for team, issues in report_data.issues_by_team %}
+                <h3><b>{{ team }}</b></h3>
+                <table>
+                    <tr>
+                        <th>Jira ID</th>
+                        <th>Description</th>
+                        <th>Assignee</th>
+                        <th>Reporter</th>
+                        <th>Priority</th>
+                        <th>Current Status</th>
+                        <th>SLA (hours)</th>
+                        <th>Reported Time</th>
+                        <th>Total Time Open (hours)</th>
+                        <th>Total Open Time (Business Hours)</th>
+                        <th>Time in Current Status (hours)</th>
+                        <th>SLA Met/Not Met</th>
+                        <th>Rootcause(RCA)</th>
+                        <th>RCA Category</th>
+                        <th class="time-in-each-status">Time in Each Status</th>
                     </tr>
-                {% endfor %}
-            </table>
+                    {% for issue in issues %}
+                        {% set priority = issue.priority %}
+                        {% set sla = sla_config.get(priority, 48) %}
+                        {% set time_in_status = issue.time_in_status %}
+                        {% set is_breached = time_in_status > sla %}
+                        {% set is_approaching_breach = time_in_status >= (sla * 0.75) and time_in_status < sla %}
+
+                        {% if is_breached %}
+                            {% set row_class = "sla-breached" %}
+                        {% elif is_approaching_breach %}
+                            {% set row_class = "sla-warning" %}
+                        {% else %}
+                            {% set row_class = "sla-ok" %}
+                        {% endif %}
+
+                        {% set sla_status = "Not Met" if is_breached else "Met" %}
+
+                        {% set root_cause = issue.root_cause if issue.root_cause is defined else 'N/A' %}
+                        {% set rca_category = issue.rca_category if issue.rca_category is defined else 'N/A' %}
+
+                        <tr class='{{ row_class }} {% if report_data.name in black_font_report_names %}black-font{% endif %}'>
+                            <td><a href='{{ jira_server_url }}/browse/{{ issue.key }}' target='_blank'>{{ issue.key }}</a></td>
+                            <td>{{ issue.summary }}</td>
+                            <td><a href='mailto:{{ issue.assignee_email }}'>{{ issue.assignee }}</a></td>
+                            <td><a href='mailto:{{ issue.reporter_email }}'>{{ issue.reporter }}</a></td>
+                            <td>{{ priority }}</td>
+                            <td>{{ issue.status }}</td>
+                            <td>{{ sla }}</td>
+                            <td>{{ issue.created.astimezone(est_timezone).strftime('%I:%M %p %d-%b-%y') }}</td>
+                            <td>{{ total_time_open_display }}</td>
+                            <td>{{ _format_hours_to_h_m(business_hours_open) }}</td>
+                            <td>{{ _format_hours_to_h_m(time_in_status) }}</td>
+                            <td>{{ sla_status }}</td>
+                            <td>{{ root_cause }}</td>
+                            <td>{{ rca_category }}</td>
+                            <td class="time-in-each-status">{{ _format_time_in_each_status(issue.time_in_each_status) | safe }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% endfor %}
         {% endif %}
     {% endfor %}
 {% endblock %}

@@ -89,11 +89,29 @@ def generate_all_issues_report(reports_data: List[ReportData], sla_config, fix_v
     
     release_info_table_data = generate_release_info_table(release_info, days_since_branch_cut)
 
+    grouped_reports_data = []
+    for report_data in reports_data:
+        issues_by_team = {}
+        for issue in report_data.issues:
+            team = issue.team or "no epic tagged"
+            if team not in issues_by_team:
+                issues_by_team[team] = []
+            issues_by_team[team].append(issue)
+        
+        # Sort teams by name, but keep "no epic tagged" last
+        sorted_teams = sorted(issues_by_team.items(), key=lambda item: (item[0] == "no epic tagged", item[0]))
+        
+        grouped_reports_data.append({
+            "name": report_data.name,
+            "jql": report_data.jql,
+            "issues_by_team": sorted_teams
+        })
+
     return template.render(
         report_title=_generate_report_title("all_issues", release_version, days_since_branch_cut, include_day_suffix=False),
         release_version=release_version,
         release_info=release_info_table_data,
-        reports_data=reports_data,
+        reports_data=grouped_reports_data,
         sla_config=sla_config,
         jira_server_url=jira_server_url,
         holidays=holidays,
@@ -114,11 +132,29 @@ def generate_open_issues_report(reports_data: List[ReportData], sla_config, fix_
 
     release_info_table_data = generate_release_info_table(release_info, days_since_branch_cut)
 
+    grouped_reports_data = []
+    for report_data in reports_data:
+        issues_by_team = {}
+        for issue in report_data.issues:
+            team = issue.team or "no epic tagged"
+            if team not in issues_by_team:
+                issues_by_team[team] = []
+            issues_by_team[team].append(issue)
+        
+        # Sort teams by name, but keep "no epic tagged" last
+        sorted_teams = sorted(issues_by_team.items(), key=lambda item: (item[0] == "no epic tagged", item[0]))
+        
+        grouped_reports_data.append({
+            "name": report_data.name,
+            "jql": report_data.jql,
+            "issues_by_team": sorted_teams
+        })
+
     return template.render(
         report_title=_generate_report_title("open_issues", release_version, days_since_branch_cut, include_day_suffix=False),
         release_version=release_version,
         release_info=release_info_table_data,
-        reports_data=reports_data,
+        reports_data=grouped_reports_data,
         sla_config=sla_config,
         jira_server_url=jira_server_url,
         holidays=holidays,

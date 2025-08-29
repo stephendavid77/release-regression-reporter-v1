@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 import os
 from src.common.sla_reporter.reporter import Reporter
-from src.common.sla_reporter.config import load_release_config
+from src.common.sla_reporter.config import load_release_config, Config
 from src.common.sla_reporter.logger import logger
 
 app = FastAPI()
@@ -17,6 +17,9 @@ def debug_env():
 class ReportRequest(BaseModel):
     report_type: str
     release_version: str
+    selected_team: str = "All"
+    selected_statuses: List[str] = []
+    selected_platforms: List[str] = []
     send_email_report: bool = False
     email_recipients: List[str] = []
     include_assignees_in_email_report: bool = False
@@ -25,6 +28,22 @@ class ReportRequest(BaseModel):
     include_regression_team: bool = False
     include_tech_leads: bool = False
     include_scrum_masters: bool = False
+
+@app.get("/api/reports")
+def get_reports():
+    config = Config("config/regression_config.yaml")
+    reports = config.get("reports", [])
+    report_names = [report["name"] for report in reports]
+    logger.debug(f"Reports returned: {report_names}")
+    return {"reports": report_names}
+
+@app.get("/api/teams")
+def get_teams():
+    config = Config("config/regression_config.yaml")
+    epic_to_team_mapping = config.get("epic_to_team_mapping", {})
+    teams = sorted(list(set(epic_to_team_mapping.values())))
+    logger.debug(f"Teams returned: {teams}")
+    return {"teams": teams}
 
 @app.get("/api/releases")
 def get_releases():
@@ -62,6 +81,9 @@ def generate_report(request: ReportRequest):
     report_html = reporter.run_webapp(
         release_version=request.release_version,
         report_type=internal_report_type,
+        selected_team=request.selected_team,
+        selected_statuses=request.selected_statuses,
+        selected_platforms=request.selected_platforms,
         email_recipients=request.email_recipients if request.send_email_report else [],
         include_assignees_in_email_report=request.include_assignees_in_email_report,
         include_reportees_in_email_report=request.include_reportees_in_email_report,

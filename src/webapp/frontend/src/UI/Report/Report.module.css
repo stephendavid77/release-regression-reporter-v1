@@ -18,3 +18,28 @@
 .noReport h2 {
   font-size: 1.75rem;
 }
+
+.collapsible {
+  cursor: pointer;
+  user-select: none;
+}
+
+.collapsible:hover {
+  background-color: #f0f0f0;
+}
+
+.collapsed {
+  display: none;
+}
+
+.collapsible::before {
+  content: '\25B6'; /* Right-pointing triangle */
+  color: #666;
+  display: inline-block;
+  margin-right: 6px;
+  transition: transform 0.2s;
+}
+
+.active.collapsible::before {
+  transform: rotate(90deg);
+}

@@ -57,6 +57,11 @@ This tool connects to Jira to generate SLA reports for regressions and post-rele
 -   **Standalone CLI**: Run as a command-line tool to generate reports.
 -   **Web Application**: Run as a web application with a user-friendly interface.
 -   **Docker Support**: Run the application in a Docker container.
+-   **Advanced Filtering**:
+    -   **Filter by Team**: Categorize issues by team based on their parent epic.
+    -   **Filter by Status**: Filter issues by one or more Jira statuses.
+    -   **Filter by Platform**: Filter reports by platform (e.g., MAPP iOS, MAPP Android).
+-   **Collapsible Sections**: The report is organized with collapsible sections for easier navigation.
 -   **Modular and Maintainable Architecture**:
     -   **Separated Concerns**: HTML, CSS, and business logic are now distinctly separated for improved maintainability and modularity.
     -   **Jinja2 Templating**: HTML generation is handled by Jinja2 templates, allowing for cleaner and more flexible report layouts.

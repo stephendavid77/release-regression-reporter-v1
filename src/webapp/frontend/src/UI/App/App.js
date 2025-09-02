@@ -26,7 +26,7 @@ function App() {
   const [reportTypes, setReportTypes] = useState([]);
   const [report, setReport] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sendEmailReport, setSendEmailReport] = useState(false);
+  
   const [includeAppLeadership, setIncludeAppLeadership] = useState(false);
   const [includeRegressionTeam, setIncludeRegressionTeam] = useState(false);
   const [includeTechLeads, setIncludeTechLeads] = useState(false);
@@ -42,6 +42,7 @@ function App() {
   const [isSeverityDropdownOpen, setIsSeverityDropdownOpen] = useState(false);
   const [showReportFilters, setShowReportFilters] = useState(false);
   const [showEmailSettings, setShowEmailSettings] = useState(false);
+  
   const [emailGroups, setEmailGroups] = useState({});
 
   useEffect(() => {
@@ -108,6 +109,16 @@ function App() {
     setShowMessageOverlay(false); // Hide previous overlay
     setOverlayMessageType('info'); // Reset type
     try {
+      const shouldSendEmail = emailRecipients.filter(email => email !== '').length > 0 ||
+        includeAssigneesInEmail ||
+        includeReporteesInEmail ||
+        includeAppLeadership ||
+        includeRegressionTeam ||
+        includeTechLeads ||
+        includeScrumMasters ||
+        includeAllAppTeams ||
+        sendPerTeamEmails;
+
       const response = await axios.post('/api/generate-report', {
         report_type: reportType,
         release_version: releaseVersion,
@@ -116,7 +127,7 @@ function App() {
         selected_priorities: selectedPriorities,
         selected_severities: selectedSeverities,
         selected_platforms: selectedPlatforms,
-        send_email_report: sendEmailReport,
+        send_email_report: shouldSendEmail,
         email_recipients: emailRecipients.filter(email => email !== ''),
         include_assignees_in_email_report: includeAssigneesInEmail,
         include_reportees_in_email_report: includeReporteesInEmail,
@@ -129,7 +140,7 @@ function App() {
       });
       setReport(response.data.report);
 
-      if (sendEmailReport) {
+      if (shouldSendEmail) {
         setOverlayMessage('Your report has been successfully generated and emailed.');
       } else {
         setOverlayMessage('Your report has been successfully generated.');
@@ -178,8 +189,7 @@ function App() {
         reportTypes={reportTypes}
         generateReport={generateReport}
         loading={loading}
-        sendEmailReport={sendEmailReport}
-        setSendEmailReport={setSendEmailReport}
+        
         includeAppLeadership={includeAppLeadership}
         setIncludeAppLeadership={setIncludeAppLeadership}
         includeRegressionTeam={includeRegressionTeam}
@@ -204,6 +214,7 @@ function App() {
         setShowReportFilters={setShowReportFilters}
         showEmailSettings={showEmailSettings}
         setShowEmailSettings={setShowEmailSettings}
+        
         emailGroups={emailGroups}
       />
       <Report report={report} />

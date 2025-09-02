@@ -1,12 +1,14 @@
 #!/bin/bash
 
+set -e
+
 # Ensure the script runs from the project root
 cd "$(dirname "$0")/.."
 
 if command -v lsof &> /dev/null; then
     echo "Attempting to kill any process on port 8000..."
     # Find PID using lsof and kill it
-    PIDS=$(lsof -t -i:8000)
+    PIDS=$(lsof -t -i:8000 || true)
     if [ -n "$PIDS" ]; then
       echo "$PIDS" | xargs kill -9
       echo "Killed process(es) on port 8000."
@@ -45,6 +47,11 @@ echo "Installing frontend dependencies..."
 (cd src/webapp/frontend && npm install)
 echo "Building frontend..."
 (cd src/webapp/frontend && npm run build)
+
+if [ ! -d "src/webapp/frontend/build" ]; then
+    echo "Frontend build failed. The 'build' directory was not created."
+    exit 1
+fi
 
 echo "Frontend build complete. Starting Uvicorn."
 

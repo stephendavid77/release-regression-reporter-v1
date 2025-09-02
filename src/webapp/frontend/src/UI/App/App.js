@@ -31,9 +31,18 @@ function App() {
   const [includeRegressionTeam, setIncludeRegressionTeam] = useState(false);
   const [includeTechLeads, setIncludeTechLeads] = useState(false);
   const [includeScrumMasters, setIncludeScrumMasters] = useState(false);
+  const [includeAllAppTeams, setIncludeAllAppTeams] = useState(false);
+  const [sendPerTeamEmails, setSendPerTeamEmails] = useState(false);
   const [showMessageOverlay, setShowMessageOverlay] = useState(false);
   const [overlayMessage, setOverlayMessage] = useState('');
-  const [overlayMessageType, setOverlayMessageType] = useState('info'); // New state
+  const [overlayMessageType, setOverlayMessageType] = useState('info');
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const [isPlatformDropdownOpen, setIsPlatformDropdownOpen] = useState(false);
+  const [isPriorityDropdownOpen, setIsPriorityDropdownOpen] = useState(false);
+  const [isSeverityDropdownOpen, setIsSeverityDropdownOpen] = useState(false);
+  const [showReportFilters, setShowReportFilters] = useState(false);
+  const [showEmailSettings, setShowEmailSettings] = useState(false);
+  const [emailGroups, setEmailGroups] = useState({});
 
   useEffect(() => {
     // Fetch releases
@@ -84,6 +93,13 @@ function App() {
         setSeverities(['All', ...response.data.severities]);
       })
       .catch(error => console.error('Error fetching severities:', error));
+
+    // Fetch email groups
+    axios.get('/api/email-groups')
+      .then(response => {
+        setEmailGroups(response.data);
+      })
+      .catch(error => console.error('Error fetching email groups:', error));
   }, []);
 
   const generateReport = async () => {
@@ -108,6 +124,8 @@ function App() {
         include_regression_team: includeRegressionTeam,
         include_tech_leads: includeTechLeads,
         include_scrum_masters: includeScrumMasters,
+        include_all_app_teams: includeAllAppTeams,
+        send_per_team_emails: sendPerTeamEmails,
       });
       setReport(response.data.report);
 
@@ -170,6 +188,23 @@ function App() {
         setIncludeTechLeads={setIncludeTechLeads}
         includeScrumMasters={includeScrumMasters}
         setIncludeScrumMasters={setIncludeScrumMasters}
+        includeAllAppTeams={includeAllAppTeams}
+        setIncludeAllAppTeams={setIncludeAllAppTeams}
+        sendPerTeamEmails={sendPerTeamEmails}
+        setSendPerTeamEmails={setSendPerTeamEmails}
+        isStatusDropdownOpen={isStatusDropdownOpen}
+        setIsStatusDropdownOpen={setIsStatusDropdownOpen}
+        isPlatformDropdownOpen={isPlatformDropdownOpen}
+        setIsPlatformDropdownOpen={setIsPlatformDropdownOpen}
+        isPriorityDropdownOpen={isPriorityDropdownOpen}
+        setIsPriorityDropdownOpen={setIsPriorityDropdownOpen}
+        isSeverityDropdownOpen={isSeverityDropdownOpen}
+        setIsSeverityDropdownOpen={setIsSeverityDropdownOpen}
+        showReportFilters={showReportFilters}
+        setShowReportFilters={setShowReportFilters}
+        showEmailSettings={showEmailSettings}
+        setShowEmailSettings={setShowEmailSettings}
+        emailGroups={emailGroups}
       />
       <Report report={report} />
       {loading && ReactDOM.createPortal(

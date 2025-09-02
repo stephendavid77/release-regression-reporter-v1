@@ -128,3 +128,41 @@
   margin-bottom: 5px;
   color: var(--primary-color);
 }
+
+.emailOptionsContainer {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.emailSection {
+  margin-bottom: var(--spacing-md);
+}
+
+.emailSection:last-child {
+  margin-bottom: 0;
+}
+
+.emailSectionHeader {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: var(--spacing-xs);
+}
+
+.infoIcon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  color: #fff;
+  text-align: center;
+  font-size: 12px;
+  line-height: 16px;
+  cursor: help;
+  margin-left: 8px;
+}

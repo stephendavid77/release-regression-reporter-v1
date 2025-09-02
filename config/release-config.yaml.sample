@@ -4,18 +4,25 @@ releases:
     team_name: "APP TRANSACT"
 
 teams:
-  - name: "APP PDP"
+  - team_name: "APP PDP"
     em: "Nirmal Thakur"
     em_email: "nirmal.thakur@macys.com"
     sm: "Ananthalal Thankabai"
     sm_email: "ananthalal.thankabai@macys.com"
-  - name: "APP SHOP"
+    regression_epics:
+      - "ACM-289"
+  - team_name: "APP SHOP"
     em: "Srini Arul David"
     em_email: "srini.arul.david@macys.com"
     sm: "Roman Mashchak"
     sm_email: "mashchak.roman@macys.com"
-  - name: "APP TRANSACT"
+    regression_epics:
+      - "APT-1978"
+  - team_name: "APP TRANSACT"
     em: "Wil Klentzeris"
     em_email: "wil.klentzeris@macys.com"
     sm: "Oleksandr Kovalenko"
     sm_email: "oleksandr.kovalenko@macys.com"
+    regression_epics:
+      - "APLT-2660"
+      - "ALPR-108"

@@ -30,6 +30,8 @@ class ReportRequest(BaseModel):
     include_regression_team: bool = False
     include_tech_leads: bool = False
     include_scrum_masters: bool = False
+    include_all_app_teams: bool = False
+    send_per_team_emails: bool = False
 
 @app.get("/api/reports")
 def get_reports():
@@ -85,6 +87,13 @@ def get_severities():
     logger.debug(f"Severities returned: {severities}")
     return {"severities": severities}
 
+@app.get("/api/email-groups")
+def get_email_groups():
+    config = Config("config/regression_config.yaml")
+    email_groups = config.get("email_recipients", {})
+    logger.debug(f"Email groups returned: {email_groups}")
+    return email_groups
+
 @app.post("/api/generate-report")
 def generate_report(request: ReportRequest):
     reporter = Reporter()
@@ -109,6 +118,8 @@ def generate_report(request: ReportRequest):
         include_regression_team=request.include_regression_team,
         include_tech_leads=request.include_tech_leads,
         include_scrum_masters=request.include_scrum_masters,
+        include_all_app_teams=request.include_all_app_teams,
+        send_per_team_emails=request.send_per_team_emails,
         send_email_report=request.send_email_report
     )
     return {"report": report_html}

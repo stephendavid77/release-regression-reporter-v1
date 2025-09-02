@@ -1,9 +1,6 @@
 # This is a sample configuration file for the regression reporter.
 # Copy this file to "regression_config.yaml" and edit it with your settings.
 
-# Report type can be "regression" or "post_release_metrics"
-report_type: "regression"
-
 # Fix version for the release
 fix_version: "APP 25.08-R2"
 
@@ -45,42 +42,24 @@ jql_templates:
     "not_closed_cancelled": "AND status not in (\"Ready for Release\", \"Ready for Showcase\", Closed, Done, Canceled)"
     "closed_cancelled": "AND status in (Closed, Canceled)"
 
-  # Clause for created date filter (for post-release metrics).
-  created_date_clause: "AND created >= \"{release_date}\""
-
 # --- Report Definitions ---
 # This section defines the available report names and their associated JQL construction parameters.
 reports:
   - name: "Open Regressions"
-    type: "regression"
     platform_selling_channel_key: "" # Empty string means no specific platform filter
     status_filter_key: "not_closed_cancelled"
-    created_date_filter: false
   - name: "Closed Regressions"
-    type: "regression"
     platform_selling_channel_key: ""
     status_filter_key: "closed_cancelled"
-    created_date_filter: false
-  - name: "Post-Release Issues"
-    type: "post_release_metrics"
-    platform_selling_channel_key: ""
-    status_filter_key: "" # Empty string means no specific status filter
-    created_date_filter: true
   - name: "MAPP iOS"
-    type: "regression"
     platform_selling_channel_key: "MAPP iOS"
     status_filter_key: "not_closed_cancelled"
-    created_date_filter: false
   - name: "MAPP Android"
-    type: "regression"
     platform_selling_channel_key: "MAPP Android"
     status_filter_key: "not_closed_cancelled"
-    created_date_filter: false
   - name: "BAPP iOS"
-    type: "regression"
     platform_selling_channel_key: "BAPP iOS"
     status_filter_key: "not_closed_cancelled"
-    created_date_filter: false
 
 # Email recipients for the report
 email_recipients:
@@ -93,10 +72,15 @@ email_recipients:
     - "tech_lead1@example.com"
   scrum_masters:
     - "scrum_master1@example.com"
+  all_app_teams:
+    - "team_member1@example.com"
+    - "team_member2@example.com"
 
-# Epic to team mapping
-epic_to_team_mapping:
-  "ACM-289": "ACM"
-  "APT-1978": "APT"
-  "APLT-2660": "APLT"
-  "ALPR-108": "ALPR"
+
+
+# Team email distribution lists
+team_email_distros:
+  "ACM": ["acm-team@example.com"]
+  "APT": ["apt-team@example.com"]
+  "APLT": ["aplt-team@example.com"]
+  "ALPR": ["alpr-team@example.com"]

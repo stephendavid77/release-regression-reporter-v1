@@ -58,7 +58,7 @@ class Reporter:
 
         logger.info("SLA report generation complete.")
 
-    def run_webapp(self, release_version: str, report_type: str, selected_team: str, selected_statuses: List[str], selected_priorities: List[str], selected_severities: List[str], selected_platforms: List[str], email_recipients: List[str], include_assignees_in_email_report: bool = False, include_reportees_in_email_report: bool = False, include_app_leadership: bool = False, include_regression_team: bool = False, include_tech_leads: bool = False, include_scrum_masters: bool = False, send_email_report: bool = False):
+    def run_webapp(self, release_version: str, report_type: str, selected_team: str, selected_statuses: List[str], selected_priorities: List[str], selected_severities: List[str], selected_platforms: List[str], email_recipients: List[str], include_assignees_in_email_report: bool = False, include_reportees_in_email_report: bool = False, include_app_leadership: bool = False, include_regression_team: bool = False, include_tech_leads: bool = False, include_scrum_masters: bool = False, include_all_app_teams: bool = False, send_per_team_emails: bool = False, send_email_report: bool = False):
         logger.info(f"Starting SLA report generation for webapp for release {release_version}.")
         html_report, reports_data, days_since_branch_cut = self._generate_report_data(release_version, report_type, selected_team, selected_statuses, selected_priorities, selected_severities, selected_platforms)
 
@@ -136,9 +136,9 @@ class Reporter:
             else:
                 days_since_branch_cut = len(pd.bdate_range(start=branch_cut_date, end=date.today(), holidays=holidays, freq='C'))
 
-        if report_type not in ["all_issues", "open_issues", "post_release_metrics"]:
+        if report_type not in ["all_issues", "open_issues"]:
             raise ValueError(
-                f"Unknown report type: '{report_type}'. Available types are 'all_issues', 'open_issues', and 'post_release_metrics'."
+                f"Unknown report type: '{report_type}'. Available types are 'all_issues' and 'open_issues'."
             )
 
         logger.info("Initializing Jira client...")
@@ -146,18 +146,14 @@ class Reporter:
         jira_server_url = self.jira_client.jira_config["server"]
 
         reports_config = self.config.get("reports", [])
-        post_release_metrics_reports_config = self.config.get("post_release_metrics", [])
 
         if selected_platforms and "All" not in selected_platforms:
             reports_config = [report for report in reports_config if report["name"] in selected_platforms]
-            post_release_metrics_reports_config = [report for report in post_release_metrics_reports_config if report["name"] in selected_platforms]
 
         if report_type == "all_issues":
             reports_data = self._process_all_issues_reports(reports_config, release_version, selected_statuses)
         elif report_type == "open_issues":
             reports_data = self._process_open_issues_reports(reports_config, release_version, selected_statuses)
-        elif report_type == "post_release_metrics":
-            reports_data = self._process_post_release_metrics_reports(post_release_metrics_reports_config, release_version, selected_statuses)
 
         if selected_team != "All":
             for report_data in reports_data:
@@ -265,7 +261,11 @@ class Reporter:
 
         logger.debug(f"Final JQL: {final_jql}")
         issues = self.jira_client.search_issues(final_jql)
-        epic_to_team_mapping = self.config.get("epic_to_team_mapping", {})
+
+        epic_to_team_mapping = {}
+        for team_info in self.teams:
+            for epic in team_info.get("regression_epics", []):
+                epic_to_team_mapping[epic] = team_info["team_name"]
 
         issue_details = []
         for issue in issues:
@@ -306,77 +306,14 @@ class Reporter:
             issues=issue_details,
         )
 
-    def _fetch_post_release_metrics_data(self, report_config, release_version, selected_statuses: List[str] = []) -> ReportData:
-        logger.info(
-            f"Fetching issues for post-release metrics report: {report_config['name']}"
-        )
-        release_date = datetime.now().strftime("%Y-%m-%d")
-        jql = report_config["jql_template"].format(
-            fix_version=release_version, release_date=release_date
-        )
-        if selected_statuses:
-            status_jql = ", ".join([f'"{s}"' for s in selected_statuses])
-            new_status_clause = f"status in ({status_jql})"
-
-            # Replace existing status clause or add a new one before ORDER BY
-            if re.search(r'status (not in|in) ', jql, re.IGNORECASE):
-                jql = re.sub(r'status (not in|in) \([^)]*\)', new_status_clause, jql, flags=re.IGNORECASE)
-            else:
-                order_by_match = re.search(r' ORDER BY ', jql, re.IGNORECASE)
-                if order_by_match:
-                    order_by_index = order_by_match.start()
-                    jql = f"{jql[:order_by_index]} AND {new_status_clause} {jql[order_by_index:]}"
-                else:
-                    jql = f"{jql} AND {new_status_clause}"
-        logger.debug(f"JQL: {jql}")
-        issues = self.jira_client.search_issues(jql)
-        epic_to_team_mapping = self.config.get("epic_to_team_mapping", {})
-
-        issue_details = []
-        for issue in issues:
-            team = "Uncategorized"
-            epic_key = getattr(issue.fields, 'customfield_10014', None)
-            if not epic_key and hasattr(issue.fields, 'parent'):
-                try:
-                    parent_issue = self.jira_client.issue(issue.fields.parent.key)
-                    epic_key = getattr(parent_issue.fields, 'customfield_10014', None)
-                except Exception as e:
-                    logger.warning(f"Could not fetch parent issue for {issue.key}: {e}")
-
-            if epic_key and epic_key in epic_to_team_mapping:
-                team = epic_to_team_mapping[epic_key]
-
-            issue_details.append(
-                IssueDetails(
-                    key=issue.key,
-                    summary=issue.fields.summary,
-                    assignee=issue.fields.assignee.displayName if issue.fields.assignee else 'Unassigned',
-                    assignee_email=issue.fields.assignee.emailAddress if issue.fields.assignee else '',
-                    reporter=issue.fields.reporter.displayName if issue.fields.reporter else 'N/A',
-                    reporter_email=issue.fields.reporter.emailAddress if issue.fields.reporter else '',
-                    priority=issue.fields.priority.name,
-                    status=issue.fields.status.name,
-                    time_in_status=self.jira_client.get_time_in_current_status(issue),
-                    time_to_assign=self.jira_client.get_time_to_assign(issue),
-                    time_in_each_status=self.jira_client.get_time_in_each_status(issue),
-                    created=datetime.strptime(issue.fields.created, "%Y-%m-%dT%H:%M:%S.%f%z"),
-                    resolution_date=datetime.strptime(issue.fields.resolutiondate, "%Y-%m-%dT%H:%M:%S.%f%z") if issue.fields.resolutiondate else None,
-                    team=team,
-                )
-            )
-
-        return ReportData(
-            name=report_config["name"],
-            jql=jql,
-            issues=issue_details,
-        )
+    
 
     def _process_all_issues_reports(self, reports, release_version, selected_statuses: List[str] = []):
         reports_data = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future_to_report = {
                 executor.submit(
-                    self._fetch_post_release_metrics_data, # Changed from _fetch_report_data
+                    self._fetch_report_data, # Changed from _fetch_report_data
                     report_config,
                     release_version,
                     selected_statuses,
@@ -397,7 +334,7 @@ class Reporter:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future_to_report = {
                 executor.submit(
-                    self._fetch_post_release_metrics_data,
+                    self._fetch_report_data,
                     report_config,
                     release_version,
                     selected_statuses,
@@ -428,6 +365,8 @@ class Reporter:
         include_regression_team: bool = False,
         include_tech_leads: bool = False,
         include_scrum_masters: bool = False,
+        include_all_app_teams: bool = False,
+        send_per_team_emails: bool = False,
     ):
         run_settings = self.main_config.get("run_settings", {})
         if run_settings.get("send_email_report"):
@@ -489,6 +428,9 @@ class Reporter:
             if include_scrum_masters and email_config.get("scrum_masters"):
                 bcc_recipients.extend(email_config["scrum_masters"])
                 logger.info(f"Including Scrum Masters in BCC: {email_config['scrum_masters']}")
+            if include_all_app_teams and email_config.get("all_app_teams"):
+                bcc_recipients.extend(email_config["all_app_teams"])
+                logger.info(f"Including All APP Teams in BCC: {email_config['all_app_teams']}")
 
             report_type_text = ""
             if report_type == "all_issues":
@@ -502,16 +444,65 @@ class Reporter:
 
             subject = f"{release_version} - Regression - {report_type_text}{day_suffix}"
 
-            send_email(
-                sender=sender_email,
-                recipients=recipients,
-                cc_recipients=None,
-                bcc_recipients=bcc_recipients,
-                subject=subject,
-                body=inlined_html_report,
-                smtp_server=smtp_server,
-                smtp_port=int(smtp_port),
-                smtp_user=sender_email,
-                smtp_password=sender_password,
-                attachment_path=attachment_path,
-            )
+            if send_per_team_emails:
+                logger.info("Sending per-team emails...")
+                team_issues = {}
+                for report_data_item in reports_data:
+                    for issue in report_data_item.issues:
+                        if issue.team not in team_issues:
+                            team_issues[issue.team] = []
+                        team_issues[issue.team].append(issue)
+                
+                team_email_distros = self.config.get("team_email_distros", {})
+
+                for team, issues_list in team_issues.items():
+                    team_recipients = team_email_distros.get(team, [])
+                    if not team_recipients:
+                        logger.warning(f"No email distribution found for team: {team}. Skipping per-team email.")
+                        continue
+                    
+                    # Generate a mini-report for the team
+                    team_report_data = [ReportData(name=f"{team} Issues", jql="", issues=issues_list)]
+                    team_html_report = self._generate_report(
+                        team_report_data,
+                        report_type, # Use the main report_type for template selection
+                        jira_server_url,
+                        days_since_branch_cut,
+                        release_version,
+                        holidays,
+                    )
+                    
+                    # Inline CSS for team email
+                    p_team = Premailer(team_html_report, css_text=css_text, keep_style_tags=False, remove_classes=False)
+                    inlined_team_html_report = p_team.transform()
+
+                    team_subject = f"{release_version} - Regression - {report_type_text} - {team}{day_suffix}"
+
+                    send_email(
+                        sender=sender_email,
+                        recipients=team_recipients,
+                        cc_recipients=None,
+                        bcc_recipients=None, # No BCC for per-team emails
+                        subject=team_subject,
+                        body=inlined_team_html_report,
+                        smtp_server=smtp_server,
+                        smtp_port=int(smtp_port),
+                        smtp_user=sender_email,
+                        smtp_password=sender_password,
+                        attachment_path=attachment_path, # Attachments might need to be handled carefully for per-team
+                    )
+                logger.info("Per-team emails sent.")
+            else: # Send main email if not sending per-team emails
+                send_email(
+                    sender=sender_email,
+                    recipients=recipients,
+                    cc_recipients=None,
+                    bcc_recipients=bcc_recipients,
+                    subject=subject,
+                    body=inlined_html_report,
+                    smtp_server=smtp_server,
+                    smtp_port=int(smtp_port),
+                    smtp_user=sender_email,
+                    smtp_password=sender_password,
+                    attachment_path=attachment_path,
+                )

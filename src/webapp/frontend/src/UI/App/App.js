@@ -13,6 +13,10 @@ function App() {
   const [selectedTeam, setSelectedTeam] = useState('All');
   const [teams, setTeams] = useState([]);
   const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const [priorities, setPriorities] = useState([]);
+  const [selectedPriorities, setSelectedPriorities] = useState([]);
+  const [severities, setSeverities] = useState([]);
+  const [selectedSeverities, setSelectedSeverities] = useState([]);
   const [platforms, setPlatforms] = useState([]);
   const [selectedPlatforms, setSelectedPlatforms] = useState([]);
   const [emailRecipients, setEmailRecipients] = useState(['']);
@@ -66,6 +70,20 @@ function App() {
         setPlatforms(['All', ...platformNames]);
       })
       .catch(error => console.error('Error fetching reports:', error));
+
+    // Fetch priorities
+    axios.get('/api/priorities')
+      .then(response => {
+        setPriorities(['All', ...response.data.priorities]);
+      })
+      .catch(error => console.error('Error fetching priorities:', error));
+
+    // Fetch severities
+    axios.get('/api/severities')
+      .then(response => {
+        setSeverities(['All', ...response.data.severities]);
+      })
+      .catch(error => console.error('Error fetching severities:', error));
   }, []);
 
   const generateReport = async () => {
@@ -79,6 +97,8 @@ function App() {
         release_version: releaseVersion,
         selected_team: selectedTeam,
         selected_statuses: selectedStatuses,
+        selected_priorities: selectedPriorities,
+        selected_severities: selectedSeverities,
         selected_platforms: selectedPlatforms,
         send_email_report: sendEmailReport,
         email_recipients: emailRecipients.filter(email => email !== ''),
@@ -121,6 +141,12 @@ function App() {
         teams={teams}
         selectedStatuses={selectedStatuses}
         setSelectedStatuses={setSelectedStatuses}
+        priorities={priorities}
+        selectedPriorities={selectedPriorities}
+        setSelectedPriorities={setSelectedPriorities}
+        severities={severities}
+        selectedSeverities={selectedSeverities}
+        setSelectedSeverities={setSelectedSeverities}
         platforms={platforms}
         selectedPlatforms={selectedPlatforms}
         setSelectedPlatforms={setSelectedPlatforms}

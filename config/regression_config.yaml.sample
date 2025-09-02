@@ -28,16 +28,59 @@ us_holidays:
   - "2024-12-25"
 
 # Configuration for regression SLA reports
+# --- JQL Templates ---
+# These templates define the base JQL queries and clauses for dynamic construction.
+jql_templates:
+  # Base JQL template for all reports.
+  base_jql_template: "type IN (Bug, \"Prod Defect\") AND fixVersion = \"{fix_version}\""
+
+  # Clauses for different platform/selling channel combinations.
+  platform_selling_channel_clauses:
+    "MAPP iOS": "AND \"Selling Channel\" = \"Macys Digital\" AND platforms = \"App iOS\" AND project IN (\"MobileApp Regression\",\"Delivery & Release\")"
+    "MAPP Android": "AND \"Selling Channel\" = \"Macys Digital\" AND platforms = \"App Android\" AND project IN (\"MobileApp Regression\",\"Delivery & Release\")"
+    "BAPP iOS": "AND \"Selling Channel[Select List (multiple choices)]\" = \"Bloom Digital\" AND \"Found In[Radio Buttons]\" = \"Regression Testing\""
+
+  # Clauses for different status filters.
+  status_clauses:
+    "not_closed_cancelled": "AND status not in (\"Ready for Release\", \"Ready for Showcase\", Closed, Done, Canceled)"
+    "closed_cancelled": "AND status in (Closed, Canceled)"
+
+  # Clause for created date filter (for post-release metrics).
+  created_date_clause: "AND created >= \"{release_date}\""
+
+# --- Report Definitions ---
+# This section defines the available report names and their associated JQL construction parameters.
 reports:
   - name: "Open Regressions"
-    jql_template: "project = APP AND fixVersion = '{fix_version}' AND type = Bug AND 'Bug Type' = Regression AND status not in (Closed, Cancelled)"
+    type: "regression"
+    platform_selling_channel_key: "" # Empty string means no specific platform filter
+    status_filter_key: "not_closed_cancelled"
+    created_date_filter: false
   - name: "Closed Regressions"
-    jql_template: "project = APP AND fixVersion = '{fix_version}' AND type = Bug AND 'Bug Type' = Regression AND status in (Closed, Cancelled)"
-
-# Configuration for post-release metrics reports
-post_release_metrics:
+    type: "regression"
+    platform_selling_channel_key: ""
+    status_filter_key: "closed_cancelled"
+    created_date_filter: false
   - name: "Post-Release Issues"
-    jql_template: "project = APP AND fixVersion = '{fix_version}' AND created >= '{release_date}'"
+    type: "post_release_metrics"
+    platform_selling_channel_key: ""
+    status_filter_key: "" # Empty string means no specific status filter
+    created_date_filter: true
+  - name: "MAPP iOS"
+    type: "regression"
+    platform_selling_channel_key: "MAPP iOS"
+    status_filter_key: "not_closed_cancelled"
+    created_date_filter: false
+  - name: "MAPP Android"
+    type: "regression"
+    platform_selling_channel_key: "MAPP Android"
+    status_filter_key: "not_closed_cancelled"
+    created_date_filter: false
+  - name: "BAPP iOS"
+    type: "regression"
+    platform_selling_channel_key: "BAPP iOS"
+    status_filter_key: "not_closed_cancelled"
+    created_date_filter: false
 
 # Email recipients for the report
 email_recipients:

@@ -19,7 +19,9 @@ class ReportRequest(BaseModel):
     release_version: str
     selected_team: str = "All"
     selected_statuses: List[str] = []
-    selected_platforms: List[str] = []
+    selected_priorities: List[str]
+    selected_severities: List[str]
+    selected_platforms: List[str]
     send_email_report: bool = False
     email_recipients: List[str] = []
     include_assignees_in_email_report: bool = False
@@ -69,6 +71,20 @@ def get_report_types():
     logger.debug(f"Report types returned: {report_types_data}")
     return report_types_data
 
+@app.get("/api/priorities")
+def get_priorities():
+    # In a real application, these might be fetched from Jira or a configuration.
+    priorities = ["High", "Medium", "Low"]
+    logger.debug(f"Priorities returned: {priorities}")
+    return {"priorities": priorities}
+
+@app.get("/api/severities")
+def get_severities():
+    # In a real application, these might be fetched from Jira or a configuration.
+    severities = ["High", "Medium", "Low"]
+    logger.debug(f"Severities returned: {severities}")
+    return {"severities": severities}
+
 @app.post("/api/generate-report")
 def generate_report(request: ReportRequest):
     reporter = Reporter()
@@ -83,6 +99,8 @@ def generate_report(request: ReportRequest):
         report_type=internal_report_type,
         selected_team=request.selected_team,
         selected_statuses=request.selected_statuses,
+        selected_priorities=request.selected_priorities,
+        selected_severities=request.selected_severities,
         selected_platforms=request.selected_platforms,
         email_recipients=request.email_recipients if request.send_email_report else [],
         include_assignees_in_email_report=request.include_assignees_in_email_report,

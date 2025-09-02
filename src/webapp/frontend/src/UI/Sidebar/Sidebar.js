@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import styles from './Sidebar.module.css';
 
-function Sidebar({ reportType, setReportType, releaseVersion, setReleaseVersion, selectedTeam, setSelectedTeam, teams, selectedStatuses, setSelectedStatuses, platforms, selectedPlatforms, setSelectedPlatforms, emailRecipients, setEmailRecipients, includeAssigneesInEmail, setIncludeAssigneesInEmail, includeReporteesInEmail, setIncludeReporteesInEmail, releases, reportTypes, generateReport, loading, sendEmailReport, setSendEmailReport, includeAppLeadership, setIncludeAppLeadership, includeRegressionTeam, setIncludeRegressionTeam, includeTechLeads, setIncludeTechLeads, includeScrumMasters, setIncludeScrumMasters }) {
+function Sidebar({ reportType, setReportType, releaseVersion, setReleaseVersion, selectedTeam, setSelectedTeam, teams, selectedStatuses, setSelectedStatuses, priorities, selectedPriorities, setSelectedPriorities, severities, selectedSeverities, setSelectedSeverities, platforms, selectedPlatforms, setSelectedPlatforms, emailRecipients, setEmailRecipients, includeAssigneesInEmail, setIncludeAssigneesInEmail, includeReporteesInEmail, setIncludeReporteesInEmail, releases, reportTypes, generateReport, loading, sendEmailReport, setSendEmailReport, includeAppLeadership, setIncludeAppLeadership, includeRegressionTeam, setIncludeRegressionTeam, includeTechLeads, setIncludeTechLeads, includeScrumMasters, setIncludeScrumMasters }) {
 
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isPlatformDropdownOpen, setIsPlatformDropdownOpen] = useState(false);
+  const [isPriorityDropdownOpen, setIsPriorityDropdownOpen] = useState(false);
+  const [isSeverityDropdownOpen, setIsSeverityDropdownOpen] = useState(false);
 
   const statusGroups = {
     'Yet to be picked up': [
@@ -47,6 +49,28 @@ function Sidebar({ reportType, setReportType, releaseVersion, setReleaseVersion,
         ? selectedPlatforms.filter(p => p !== platform)
         : [...selectedPlatforms, platform];
       setSelectedPlatforms(newPlatforms);
+    }
+  };
+
+  const handlePriorityChange = (priority) => {
+    if (priority === 'All') {
+      setSelectedPriorities([]);
+    } else {
+      const newPriorities = selectedPriorities.includes(priority)
+        ? selectedPriorities.filter(p => p !== priority)
+        : [...selectedPriorities, priority];
+      setSelectedPriorities(newPriorities);
+    }
+  };
+
+  const handleSeverityChange = (severity) => {
+    if (severity === 'All') {
+      setSelectedSeverities([]);
+    } else {
+      const newSeverities = selectedSeverities.includes(severity)
+        ? selectedSeverities.filter(s => s !== severity)
+        : [...selectedSeverities, severity];
+      setSelectedSeverities(newSeverities);
     }
   };
 
@@ -132,6 +156,86 @@ function Sidebar({ reportType, setReportType, releaseVersion, setReleaseVersion,
                     />
                     <label className="form-check-label" htmlFor={`platform-${platform}`}>
                       {platform}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mb-3">
+          <label className={styles.formLabel}>Priority</label>
+          <div className={styles.statusDropdown}>
+            <div className={styles.statusDropdownHeader} onClick={() => setIsPriorityDropdownOpen(!isPriorityDropdownOpen)}>
+              {selectedPriorities.length === 0 ? 'All' : selectedPriorities.join(', ')}
+              <span className={`${styles.dropdownArrow} ${isPriorityDropdownOpen ? styles.open : ''}`}>&#9662;</span>
+            </div>
+            {isPriorityDropdownOpen && (
+              <div className={styles.statusCheckboxes}>
+                <div key="all-priorities" className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="priority-all"
+                    checked={selectedPriorities.length === 0}
+                    onChange={() => handlePriorityChange('All')}
+                  />
+                  <label className="form-check-label" htmlFor="priority-all">
+                    All
+                  </label>
+                </div>
+                {priorities.slice(1).map(priority => (
+                  <div key={priority} className="form-check">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id={`priority-${priority}`}
+                      checked={selectedPriorities.includes(priority)}
+                      onChange={() => handlePriorityChange(priority)}
+                    />
+                    <label className="form-check-label" htmlFor={`priority-${priority}`}>
+                      {priority}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mb-3">
+          <label className={styles.formLabel}>Severity</label>
+          <div className={styles.statusDropdown}>
+            <div className={styles.statusDropdownHeader} onClick={() => setIsSeverityDropdownOpen(!isSeverityDropdownOpen)}>
+              {selectedSeverities.length === 0 ? 'All' : selectedSeverities.join(', ')}
+              <span className={`${styles.dropdownArrow} ${isSeverityDropdownOpen ? styles.open : ''}`}>&#9662;</span>
+            </div>
+            {isSeverityDropdownOpen && (
+              <div className={styles.statusCheckboxes}>
+                <div key="all-severities" className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="severity-all"
+                    checked={selectedSeverities.length === 0}
+                    onChange={() => handleSeverityChange('All')}
+                  />
+                  <label className="form-check-label" htmlFor="severity-all">
+                    All
+                  </label>
+                </div>
+                {severities.slice(1).map(severity => (
+                  <div key={severity} className="form-check">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id={`severity-${severity}`}
+                      checked={selectedSeverities.includes(severity)}
+                      onChange={() => handleSeverityChange(severity)}
+                    />
+                    <label className="form-check-label" htmlFor={`severity-${severity}`}>
+                      {severity}
                     </label>
                   </div>
                 ))}

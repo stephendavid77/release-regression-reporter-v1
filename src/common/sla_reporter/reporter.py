@@ -58,9 +58,9 @@ class Reporter:
 
         logger.info("SLA report generation complete.")
 
-    def run_webapp(self, release_version: str, report_type: str, selected_team: str, selected_statuses: List[str], selected_platforms: List[str], email_recipients: List[str], include_assignees_in_email_report: bool = False, include_reportees_in_email_report: bool = False, include_app_leadership: bool = False, include_regression_team: bool = False, include_tech_leads: bool = False, include_scrum_masters: bool = False, send_email_report: bool = False):
+    def run_webapp(self, release_version: str, report_type: str, selected_team: str, selected_statuses: List[str], selected_priorities: List[str], selected_severities: List[str], selected_platforms: List[str], email_recipients: List[str], include_assignees_in_email_report: bool = False, include_reportees_in_email_report: bool = False, include_app_leadership: bool = False, include_regression_team: bool = False, include_tech_leads: bool = False, include_scrum_masters: bool = False, send_email_report: bool = False):
         logger.info(f"Starting SLA report generation for webapp for release {release_version}.")
-        html_report, reports_data, days_since_branch_cut = self._generate_report_data(release_version, report_type, selected_team, selected_statuses, selected_platforms)
+        html_report, reports_data, days_since_branch_cut = self._generate_report_data(release_version, report_type, selected_team, selected_statuses, selected_priorities, selected_severities, selected_platforms)
 
         if report_type == "open_issues" or report_type == "all_issues":
             excel_filename = "sla_report.xlsx"
@@ -117,7 +117,7 @@ class Reporter:
             current_date += timedelta(days=1)
         return business_days
 
-    def _generate_report_data(self, release_version: str, report_type: str, selected_team: str = "All", selected_statuses: List[str] = [], selected_platforms: List[str] = []):
+    def _generate_report_data(self, release_version: str, report_type: str, selected_team: str = "All", selected_statuses: List[str] = [], selected_priorities: List[str] = [], selected_severities: List[str] = [], selected_platforms: List[str] = []):
         self.release_info = get_release_info(self.releases, self.teams, release_version)
 
         if not self.release_info:
@@ -136,23 +136,28 @@ class Reporter:
             else:
                 days_since_branch_cut = len(pd.bdate_range(start=branch_cut_date, end=date.today(), holidays=holidays, freq='C'))
 
-        if report_type not in ["all_issues", "open_issues"]:
+        if report_type not in ["all_issues", "open_issues", "post_release_metrics"]:
             raise ValueError(
-                f"Unknown report type: '{report_type}'. Available types are 'all_issues' and 'open_issues'."
+                f"Unknown report type: '{report_type}'. Available types are 'all_issues', 'open_issues', and 'post_release_metrics'."
             )
 
         logger.info("Initializing Jira client...")
         self.jira_client = SlaJiraClient(credentials=self.credentials, holidays=set(holidays))
         jira_server_url = self.jira_client.jira_config["server"]
 
-        reports = self.config.get("reports", [])
+        reports_config = self.config.get("reports", [])
+        post_release_metrics_reports_config = self.config.get("post_release_metrics", [])
+
         if selected_platforms and "All" not in selected_platforms:
-            reports = [report for report in reports if report["name"] in selected_platforms]
+            reports_config = [report for report in reports_config if report["name"] in selected_platforms]
+            post_release_metrics_reports_config = [report for report in post_release_metrics_reports_config if report["name"] in selected_platforms]
 
         if report_type == "all_issues":
-            reports_data = self._process_all_issues_reports(reports, release_version, selected_statuses)
+            reports_data = self._process_all_issues_reports(reports_config, release_version, selected_statuses)
         elif report_type == "open_issues":
-            reports_data = self._process_open_issues_reports(reports, release_version, selected_statuses)
+            reports_data = self._process_open_issues_reports(reports_config, release_version, selected_statuses)
+        elif report_type == "post_release_metrics":
+            reports_data = self._process_post_release_metrics_reports(post_release_metrics_reports_config, release_version, selected_statuses)
 
         if selected_team != "All":
             for report_data in reports_data:
@@ -203,25 +208,63 @@ class Reporter:
         logger.debug(f"Generated HTML report (first 500 chars): {html_report[:500]}")
         return html_report
 
-    def _fetch_report_data(self, report_config, release_version, selected_statuses: List[str] = []) -> ReportData:
+    def _fetch_report_data(self, report_config, release_version, selected_statuses: List[str] = [], selected_priorities: List[str] = [], selected_severities: List[str] = []) -> ReportData:
         logger.info(f"Fetching issues for report: {report_config['name']}")
-        jql = report_config["jql_template"].format(fix_version=release_version)
+        project = self.config.get("project") # Get project from config
+        jql_templates = self.config.get("jql_templates")
+
+        base_jql = jql_templates["base_jql_template"].format(fix_version=release_version, project=project)
+        
+        # Build dynamic JQL based on report_config parameters
+        final_jql = base_jql
+
+        # Add platform/selling channel clause
+        platform_selling_channel_key = report_config.get("platform_selling_channel_key")
+        if platform_selling_channel_key:
+            final_jql += jql_templates["platform_selling_channel_clauses"][platform_selling_channel_key]
+
+        # Add status clause
+        status_filter_key = report_config.get("status_filter_key")
+        if status_filter_key:
+            final_jql += jql_templates["status_clauses"][status_filter_key]
+
+        # Add created date clause for post-release metrics
+        if report_config.get("created_date_filter"):
+            release_date = datetime.now().strftime("%Y-%m-%d")
+            final_jql += jql_templates["created_date_clause"].format(release_date=release_date)
+
+        # Override status clause if specific statuses are selected by the user
         if selected_statuses:
             status_jql = ", ".join([f'"{s}"' for s in selected_statuses])
             new_status_clause = f"status in ({status_jql})"
 
             # Replace existing status clause or add a new one before ORDER BY
-            if re.search(r'status (not in|in) ', jql, re.IGNORECASE):
-                jql = re.sub(r'status (not in|in) \([^)]*\)', new_status_clause, jql, flags=re.IGNORECASE)
+            if re.search(r'status (not in|in) ', final_jql, re.IGNORECASE):
+                final_jql = re.sub(r'status (not in|in) \([^)]*\)', new_status_clause, final_jql, flags=re.IGNORECASE)
             else:
-                order_by_match = re.search(r' ORDER BY ', jql, re.IGNORECASE)
+                order_by_match = re.search(r' ORDER BY ', final_jql, re.IGNORECASE)
                 if order_by_match:
                     order_by_index = order_by_match.start()
-                    jql = f"{jql[:order_by_index]} AND {new_status_clause} {jql[order_by_index:]}"
+                    final_jql = f"{final_jql[:order_by_index]} AND {new_status_clause} {final_jql[order_by_index:]}"
                 else:
-                    jql = f"{jql} AND {new_status_clause}"
-        logger.debug(f"JQL: {jql}")
-        issues = self.jira_client.search_issues(jql)
+                    final_jql = f"{final_jql} AND {new_status_clause}"
+        else: # If selected_statuses is empty, remove any existing status clause from the base JQL
+            final_jql = re.sub(r' AND status (not in|in) \([^)]*\)', '', final_jql, flags=re.IGNORECASE)
+            final_jql = re.sub(r'status (not in|in) \([^)]*\) AND ', '', final_jql, flags=re.IGNORECASE)
+            final_jql = re.sub(r'status (not in|in) \([^)]*\)', '', final_jql, flags=re.IGNORECASE)
+
+        # Add priority clause if specific priorities are selected by the user
+        if selected_priorities:
+            priority_jql = ", ".join([f'"{p}"' for p in selected_priorities])
+            final_jql += f" AND priority in ({priority_jql})"
+
+        # Add severity clause if specific severities are selected by the user
+        if selected_severities:
+            severity_jql = ", ".join([f'"{s}"' for s in selected_severities])
+            final_jql += f" AND Severity in ({severity_jql})"
+
+        logger.debug(f"Final JQL: {final_jql}")
+        issues = self.jira_client.search_issues(final_jql)
         epic_to_team_mapping = self.config.get("epic_to_team_mapping", {})
 
         issue_details = []
